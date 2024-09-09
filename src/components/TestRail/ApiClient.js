@@ -1,4 +1,4 @@
-const axios = require('axios');
+const unirest = require('unirest');
 const ApiError = require('./ApiError');
 const FormData = require('form-data');
 const fs = require('fs');
@@ -23,20 +23,13 @@ class ApiClient {
      * @param onError
      * @returns {Promise<AxiosResponse<any>>}
      */
-    sendData(slug, postData, onSuccess, onError) {
-        return axios({
-            method: 'post',
-            url: this.baseUrl + slug,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            auth: {
-                username: this.username,
-                password: this.password,
-            },
-            data: JSON.stringify(postData),
-        })
+    async sendData(slug, postData, onSuccess, onError) {
+        return unirest.post(this.baseUrl + slug)
+            .headers({ 'Content-Type': 'application/json' })
+            .auth(this.username, this.password)
+            .send(postData)
             .then((response) => {
+                response.data = response.body;
                 return onSuccess(response);
             })
             .catch((error) => {
@@ -59,20 +52,13 @@ class ApiClient {
         const formData = new FormData();
         formData.append('attachment', fs.createReadStream(screenshotPath));
 
-        return axios({
-            method: 'post',
-            url: this.baseUrl + '/add_attachment_to_result/' + resultId,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-            auth: {
-                username: this.username,
-                password: this.password,
-            },
-            data: formData,
-        })
+        return unirest.post(this.baseUrl + '/add_attachment_to_result/' + resultId)
+        .headers({ 'Content-Type': 'multipart/form-data' })
+        .auth(this.username, this.password)
+        .send(formData)
             .then((response) => {
                 if (onSuccess) {
+                    response.data = response.body;
                     return onSuccess(response);
                 }
             })
